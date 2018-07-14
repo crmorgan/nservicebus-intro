@@ -1,0 +1,18 @@
+version: '3.4'
+
+services:
+  store-web:
+    image: ${DOCKER_REGISTRY}storeweb
+    build:
+      context: .
+      dockerfile: store-web/Dockerfile
+  rabbit:
+    image: rabbitmq:3-management
+    container_name: "message-queue"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment: 
+      RABBITMQ_DEFAULT_USER: retaildemo
+      RABBITMQ_DEFAULT_PASS : password
+
