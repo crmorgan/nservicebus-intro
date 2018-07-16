@@ -2,13 +2,15 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NServiceBus;
+using NServiceBus.Logging;
 using Sales.Messages.Commands;
 
 namespace store_web.Controllers
 {
     public class CheckoutController : Controller
     {
-	    private readonly IMessageSession _bus;
+	    private static readonly ILog Log = LogManager.GetLogger<CheckoutController>();
+		private readonly IMessageSession _bus;
 
 	    public CheckoutController(IMessageSession bus)
 	    {
@@ -32,7 +34,9 @@ namespace store_web.Controllers
 				OrderId = orderId
 			};
 
-			await _bus.Send(placeOrderCommand);
+			Log.Info($"******************** Sending PlaceOrder command for order id '{orderId}' ********************");
+
+			await _bus.Send(placeOrderCommand).ConfigureAwait(false);
 
 			return View("Confirmation");
 		}

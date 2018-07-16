@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
@@ -10,9 +10,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.8" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.3" />
-    <PackageReference Include="nservicebus" Version="7.0.1" />
-    <PackageReference Include="nservicebus.Newtonsoft.Json" Version="2.1.0" />
-    <PackageReference Include="nservicebus.rabbitmq" Version="5.0.0" />
+    <PackageReference Include="NServiceBus" Version="7.0.1" />
+    <PackageReference Include="NServiceBus.Newtonsoft.Json" Version="2.1.0" />
+    <PackageReference Include="NServiceBus.RabbitMQ" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
