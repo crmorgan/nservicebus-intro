@@ -1,10 +1,21 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using NServiceBus;
+using Sales.Messages.Commands;
 
 namespace store_web.Controllers
 {
     public class CheckoutController : Controller
     {
+	    private readonly IMessageSession _bus;
+
+	    public CheckoutController(IMessageSession bus)
+	    {
+		    _bus = bus;
+	    }
+
+
         public IActionResult Index()
         {
 			TempData["OrderId"] = GenerateOrderId();
@@ -12,11 +23,16 @@ namespace store_web.Controllers
             return View();
         }
 
-		public IActionResult PlaceOrder(int orderId)
+		public async Task<IActionResult> PlaceOrder(int orderId)
 		{
 			TempData["OrderId"] = orderId;
 
-			// TODO: send a PlaceOrder command to the bus
+			var placeOrderCommand = new PlaceOrder
+			{
+				OrderId = orderId
+			};
+
+			await _bus.Send(placeOrderCommand);
 
 			return View("Confirmation");
 		}
