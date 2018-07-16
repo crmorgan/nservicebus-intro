@@ -6,13 +6,10 @@ services:
     build:
       context: .
       dockerfile: store-web/Dockerfile
-  rabbit:
-    image: rabbitmq:3-management
-    container_name: "message-queue"
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    environment: 
-      RABBITMQ_DEFAULT_USER: retaildemo
-      RABBITMQ_DEFAULT_PASS : password
+    environment:
+      servicebus_connection_string: ${servicebus_connection_string-host=message-queue; username=retaildemo; password=password}
 
+networks:
+  default:
+    external:
+      name: retail-demo
