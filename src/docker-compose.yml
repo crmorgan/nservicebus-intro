@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: store-web/Dockerfile
     environment:
-      servicebus_connection_string: ${servicebus_connection_string-host=message-queue; username=retaildemo; password=password}
+      servicebus_connection_string: ${servicebus_connection_string}
 
   sales:
     image: sales
@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: Sales.Endpoints/Dockerfile
     environment:
-      servicebus_connection_string: ${servicebus_connection_string-host=message-queue; username=retaildemo; password=password}
+      servicebus_connection_string: ${servicebus_connection_string}
 
   billing:
     image: billing
@@ -23,7 +23,15 @@ services:
       context: .
       dockerfile: Billing.Endpoints/Dockerfile
     environment:
-      servicebus_connection_string: ${servicebus_connection_string-host=message-queue; username=retaildemo; password=password}
+      servicebus_connection_string: ${servicebus_connection_string}
+
+  shipping:
+    image: shipping
+    build:
+      context: .
+      dockerfile: Shipping.Endpoints/Dockerfile
+    environment:
+      servicebus_connection_string: ${servicebus_connection_string}
 
 networks:
   default:
