@@ -2,6 +2,7 @@
 using NServiceBus;
 using NServiceBus.Logging;
 using Sales.Messages.Commands;
+using Sales.Messages.Events;
 
 namespace Sales.Endpoints.Handlers
 {
@@ -12,12 +13,14 @@ namespace Sales.Endpoints.Handlers
 	    {
 			// TODO: This is where you would load the existing order from the sales database and have logic to place the order
 
-		    Log.Info($"******************** Handled PlaceOrder for order id '{message.OrderId}' ********************");
+		    Log.Info($"******************** PlaceOrder for order id '{message.OrderId}' ********************");
 
+		    var orderPlacedEvent = new OrderPlaced
+		    {
+			    OrderId = message.OrderId
+		    };
 
-		    // TODO: Publish a OrderPlaced event
-
-			return Task.CompletedTask;
+			return context.Publish(orderPlacedEvent);
 	    }
     }
 }

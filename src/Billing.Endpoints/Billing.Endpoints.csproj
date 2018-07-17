@@ -8,17 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="7.0.1" />
-    <PackageReference Include="NServiceBus.Newtonsoft.Json" Version="2.0.0" />
+    <PackageReference Include="NServiceBus.Newtonsoft.Json" Version="2.1.0" />
     <PackageReference Include="NServiceBus.RabbitMQ" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="license.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\Sales.Messages\Sales.Messages.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="license.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
