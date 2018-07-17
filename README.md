@@ -1,6 +1,8 @@
 # nservicebus-intro
 Introduction to building distributed systems with NServiceBus retail demo.  This is based on the tutorial at https://docs.particular.net/tutorials/intro-to-nservicebus/3-multiple-endpoints but is running NServiceBus version 7 in Docker containers and RabbitMQ as the transport.
 
+Accompanying slide deck https://www.slideshare.net/ChrisMorgan8/introduction-to-microservices-with-nservice-bus
+
 Each of the steps or stages below are in tagged in master or you can get the fully implement demo by checking out the HEAD of master.
 
 ### Prerequisites ###
