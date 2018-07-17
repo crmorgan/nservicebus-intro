@@ -29,9 +29,13 @@ To stop RabbitMQ run `docker-compose down`
 
 
 ## Step One ##
-Check out the step_one branch which has a working web site that will publish the PlaceOrder command but there are no endpoints configured yet so it will not go to the message queue.
+Check out the step_one branch which has a working web site but does not publish any events and there are no endpoints yet.
 
 Run the project to launch the store web site at http://localhost:32773/
+
+
+## Step Two ##
+This step adds publishing of the PlaceOrder command by the checkout controller and handling of the message by the Sales endpoint.
 
 #### Create the Sales Endpoint ####
 
@@ -56,13 +60,10 @@ Add a `Sales.Endpoints.PlaceOrderHandler` to handle the `PlaceOrder` command
 Add a `shipping` service to the `/src/docker-compose.yaml` file
 
 
-## Step Two ##
-from `src\Sales.Endpoints`
-
-run `dotnet new nsbdockercontainer`
- 
  
 ## Step Three ##
+This steps adds publishing of the OrderPlaced event in the PlaceOrderHandler and handling it using the Billing endpoint.
+
 From the `\src` directory run the following commands to create a Billing.Endpoints project using the NServiceBus Docker Container template: 
 
     mkdir Billing.Endpoints    
@@ -81,7 +82,7 @@ Edit the EndpointConfiguration settings to use Infrastructure.Endpoint.
 
 Create an `OrderPlaced` event in `Sales.Messages.Events`
 
-Publish the `OrderPlaced` event from the `PlaceOrderHandler` handler
+Publish the `OrderPlaced` event from the `Sales.Endpoints.PlaceOrderHandler` handler
 
 Add a `Billing.Endpoints.OrderPlacedHandler` to handle the `OrderPlaced` event
 
@@ -89,6 +90,8 @@ Add a `billing` service to the `/src/docker-compose.yaml` file
 
 
 ## Step Four ##
+This steps adds handling of the OrderPlaced event using the Shipping endpoint.
+
 From the `\src` directory run the following commands to create a Shipping.Endpoints project using the NServiceBus Docker Container template: 
 
     mkdir Shipping.Endpoints    
