@@ -4,32 +4,40 @@ using Infrastructure;
 using NServiceBus;
 using NServiceBus.Logging;
 
-namespace Sales.Endpoints
+namespace Billing.Endpoints
 {
     class Host
     {
 	    private static readonly ILog Log = LogManager.GetLogger<Host>();
         private IEndpointInstance _endpoint;
-		public string EndpointName => "sales";
 
-	    public async Task Start()
-	    {
-		    try
-		    {
-			    var connectionString = Environment.GetEnvironmentVariable("servicebus_connection_string");
-			    var endpointConfiguration = EndpointConfigurationBuilder.Build(EndpointName, connectionString, OnCriticalError);
+        public string EndpointName => "billing";
 
-			    // start the endpoint
-				_endpoint = await Endpoint.Start(endpointConfiguration);
-				Log.Info("****************** Sales endpoint successfully started ******************");
-		    }
-		    catch (Exception ex)
-		    {
-			    FailFast("Failed to start.", ex);
-		    }
-	    }
+        public async Task Start()
+        {
+            try
+            {
+	            var connectionString = Environment.GetEnvironmentVariable("servicebus_connection_string");
+	            var endpointConfiguration = EndpointConfigurationBuilder.Build(EndpointName, connectionString, OnCriticalError);
 
-	    public async Task Stop()
+	            _endpoint = await Endpoint.Start(endpointConfiguration);
+	            Log.Info("****************** Billing endpoint successfully started ******************");
+
+				// setup dependency injection
+	            //endpointConfiguration.RegisterComponents(
+		           // configureComponents =>
+		           // {
+			          //  configureComponents
+				         //   .ConfigureComponent<TripFinderSearchResultRepository>(DependencyLifecycle.InstancePerUnitOfWork);
+		           // });
+			}
+            catch (Exception ex)
+            {
+                FailFast("Failed to start.", ex);
+            }
+        }
+
+        public async Task Stop()
         {
             try
             {

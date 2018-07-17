@@ -17,6 +17,14 @@ services:
     environment:
       servicebus_connection_string: ${servicebus_connection_string-host=message-queue; username=retaildemo; password=password}
 
+  billing:
+    image: billing
+    build:
+      context: .
+      dockerfile: Billing.Endpoints/Dockerfile
+    environment:
+      servicebus_connection_string: ${servicebus_connection_string-host=message-queue; username=retaildemo; password=password}
+
 networks:
   default:
     external:
