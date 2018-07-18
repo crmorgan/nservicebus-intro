@@ -3,7 +3,7 @@ Introduction to building distributed systems with NServiceBus retail demo.  This
 
 Accompanying slide deck https://www.slideshare.net/ChrisMorgan8/introduction-to-microservices-with-nservice-bus
 
-Each of the steps or stages below are in tagged in master or you can get the fully implement demo by checking out the HEAD of master.
+Each of the steps or stages below are available as branches or you can get the fully implement demo by checking out the HEAD of master.
 
 ### Prerequisites ###
 - Windows 10
@@ -29,13 +29,17 @@ To stop RabbitMQ run `docker-compose down`
 
 
 ## Step One ##
-Check out the step_one branch which has a working web site but does not publish any events and there are no endpoints yet.
+This step starts you out with a working web site that allows you to checkout and place an order but does not publish any events and there are no endpoints yet.
 
 Run the project to launch the store web site at http://localhost:32773/
 
+Click the proceed to checkout button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the PlaceOrder command that will be added in step two.
+
+Click Place your order to see that the CheckoutController.PlaceOrder() action method is called and the confirmation page is loaded.  In the next step you will publish the PlaceOrder command from this action method.
+
 
 ## Step Two ##
-This step adds publishing of the PlaceOrder command by the checkout controller and handling of the message by the Sales endpoint.
+This step adds publishing of the PlaceOrder command in the checkout controller and handling of the command in a Sales endpoint.
 
 #### Create the Sales Endpoint ####
 
