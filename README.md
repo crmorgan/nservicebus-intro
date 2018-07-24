@@ -12,7 +12,6 @@ Each of the steps or stages below are available as branches or you can get the f
 - Visual Studio 2017 (community edition is fine)
 - Docker for Windows with Linux container support enabled
 - NServiceBus dotnet new templates
- - run `dotnet new -i "ParticularTemplates::*"` 
 
 ### Start RabbitMQ ###
 Before running any containers for the website start the RabbitMQ container.
@@ -33,7 +32,7 @@ To stop RabbitMQ run `docker-compose down`
 ## Step One ##
 This step starts you out with a working web site that allows you to checkout and place an order but does not publish any events and there are no endpoints yet.
 
-Run the project in Visual Studio (<kbd>F5<kbd>) to launch the store web site at http://localhost:32773/
+Run the project in Visual Studio with <kbd>F5</kbd> to launch the store web site at http://localhost:32773/
 
 Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the **PlaceOrder** command that will be added in step two.
 
@@ -43,8 +42,12 @@ Click **Place your order** to see that the CheckoutController.PlaceOrder() actio
 ## Step Two ##
 This step adds publishing of the **PlaceOrder** command in the checkout controller and handling of the command in a Sales endpoint.
 
-#### Create the Sales Endpoint ####
+#### Create the Sales Endpoint ###
 
+From a command or bash window
+
+Run `dotnet new -i "ParticularTemplates::*"` to install the NServiceBus dotnet new template
+ 
 From the `\src` directory run the following commands to create a Sales.Endpoints project using the NServiceBus Docker Container template: 
 
     mkdir Sales.Endpoints    
@@ -55,11 +58,13 @@ Add the NServiceBus.RabbitMQ package to the Sales.Endpoints project
 
 `Install-Package NServiceBus.RabbitMQ`
 
-In Visual Studio add the created project to the Sales solution folder.
-Edit the Hosts.cs file
-Change `EndpointName` to `sales`
+In Visual Studio add the new project to the Sales solution folder
 
-Edit the EndpointConfiguration setting to match the store-web settings
+Edit the Hosts.cs file and change the following:
+
+- Change `EndpointName` to `sales`
+
+- Edit the `EndpointConfiguration` object's setting to match those in the store-web
 
 Add a `Sales.Endpoints.PlaceOrderHandler` to handle the `PlaceOrder` command
 
@@ -68,7 +73,7 @@ Add a `shipping` service to the `/src/docker-compose.yaml` file
 
  
 ## Step Three ##
-This steps adds publishing of the OrderPlaced event in the PlaceOrderHandler and handling it using the Billing endpoint.
+This steps adds publishing of the`OrderPlaced` event in the `PlaceOrderHandler` and handling it using the Billing endpoint.
 
 From the `\src` directory run the following commands to create a Billing.Endpoints project using the NServiceBus Docker Container template: 
 
