@@ -1,7 +1,9 @@
-# nservicebus-intro
-Introduction to building distributed systems with NServiceBus retail demo.  This is based on the tutorial at https://docs.particular.net/tutorials/intro-to-nservicebus/3-multiple-endpoints but is running NServiceBus version 7 in Docker containers and RabbitMQ as the transport.
+# NServiceBus Retail Demo with .NET Core
+**With .NET Core, Docker, and RabbitMQ**
 
-Accompanying slide deck https://www.slideshare.net/ChrisMorgan8/introduction-to-microservices-with-nservice-bus
+This is a sample project that gives you and introduction into to building distributed systems with NServiceBus.  The project is based on Particular's tutorial at https://docs.particular.net/tutorials/intro-to-nservicebus/3-multiple-endpoints but is using NServiceBus version 7, Docker containers, and RabbitMQ as the transport.
+
+An accompanying slide deck that introduces some of the concepts of distributed systems and Service Oriented Architecure is also available at https://www.slideshare.net/ChrisMorgan8/introduction-to-microservices-with-nservice-bus.
 
 Each of the steps or stages below are available as branches or you can get the fully implement demo by checking out the HEAD of master.
 
@@ -9,21 +11,21 @@ Each of the steps or stages below are available as branches or you can get the f
 - Windows 10
 - Visual Studio 2017 (community edition is fine)
 - Docker for Windows with Linux container support enabled
-- Install the NServiceBus .net templates
+- NServiceBus dotnet new templates
  - run `dotnet new -i "ParticularTemplates::*"` 
 
 ### Start RabbitMQ ###
-Before running any containers for the website start the RabbitMQ container.  Open a command or powershell prompt.
+Before running any containers for the website start the RabbitMQ container.
 
-Change to the root directory of where you cloned the repository to.
+Open a command or powershell prompt and cChange to the root directory of where you cloned the repository to
 
 Run `docker-compose up -d`
 
-You can can access the RabbitMQ Management console at http://localhost:15672
+You can now access the RabbitMQ Management console at http://localhost:15672
 
-Username: retaildemo
+Username: `retaildemo`
 
-Password: password
+Password: `password`
 
 To stop RabbitMQ run `docker-compose down`
 
@@ -31,15 +33,15 @@ To stop RabbitMQ run `docker-compose down`
 ## Step One ##
 This step starts you out with a working web site that allows you to checkout and place an order but does not publish any events and there are no endpoints yet.
 
-Run the project to launch the store web site at http://localhost:32773/
+Run the project in Visual Studio (<kbd>F5<kbd>) to launch the store web site at http://localhost:32773/
 
-Click the proceed to checkout button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the PlaceOrder command that will be added in step two.
+Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the **PlaceOrder** command that will be added in step two.
 
-Click Place your order to see that the CheckoutController.PlaceOrder() action method is called and the confirmation page is loaded.  In the next step you will publish the PlaceOrder command from this action method.
+Click **Place your order** to see that the CheckoutController.PlaceOrder() action method is called and the confirmation page is loaded.  In the next step you will publish the **PlaceOrder** command from this action method.
 
 
 ## Step Two ##
-This step adds publishing of the PlaceOrder command in the checkout controller and handling of the command in a Sales endpoint.
+This step adds publishing of the **PlaceOrder** command in the checkout controller and handling of the command in a Sales endpoint.
 
 #### Create the Sales Endpoint ####
 
