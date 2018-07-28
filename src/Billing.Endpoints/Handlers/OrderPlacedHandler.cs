@@ -11,7 +11,7 @@ namespace Billing.Endpoints.Handlers
 	{
 		private static readonly ILog Log = LogManager.GetLogger<OrderPlacedHandler>();
 
-		public Task Handle(OrderPlaced message, IMessageHandlerContext context)
+		public async Task Handle(OrderPlaced message, IMessageHandlerContext context)
 		{
 			Log.Info($"******************** OrderPlaced for order id '{message.OrderId}' ********************");
 
@@ -24,9 +24,7 @@ namespace Billing.Endpoints.Handlers
 				OrderId = message.OrderId
 			};
 
-			context.Publish(orderBilled);
-
-			return Task.CompletedTask;
+			await context.Publish(orderBilled);
 		}
 	}
 }

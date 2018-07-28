@@ -32,103 +32,111 @@ To stop RabbitMQ run `docker-compose down`
 ## Step One ##
 This step starts you out with a working web site that allows you to checkout and place an order but does not publish any events and there are no endpoints yet.
 
-Run the project in Visual Studio with <kbd>F5</kbd> to launch the store web site at http://localhost:32773/
-
-Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the **PlaceOrder** command that will be added in step two.
-
-Click **Place your order** to see that the CheckoutController.PlaceOrder() action method is called and the confirmation page is loaded.  In the next step you will publish the **PlaceOrder** command from this action method.
+1. Run the project in Visual Studio with <kbd>F5</kbd> to launch the store web site at http://localhost:32773/
+2. Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the `PlaceOrder` command that will be added in step two.
+3. Click **Place your order** to see that the `CheckoutController.PlaceOrder()` action method is called and the confirmation page is loaded.  In the next step you will publish the `PlaceOrder` command from this action method.
 
 
 ## Step Two ##
 This step adds publishing of the **PlaceOrder** command in the checkout controller and handling of the command in a Sales endpoint.
 
-#### Create the Sales Endpoint ###
+### Create the Sales Endpoint ###
 
 From a command or bash window
 
-Run `dotnet new -i "ParticularTemplates::*"` to install the NServiceBus dotnet new template
- 
-From the `\src` directory run the following commands to create a Sales.Endpoints project using the NServiceBus Docker Container template: 
+1. Run `dotnet new -i "ParticularTemplates::*"` to install the NServiceBus dotnet new template
+2. Change to the `\src` directory and run the command: `dotnet new nsbdockercontainer -n Sales.Endpoints`
+3. In Visual Studio add the new project to the `Sales` solution folder
+3. Add the NServiceBus.RabbitMQ package to the Sales.Endpoints project: `Install-Package NServiceBus.RabbitMQ`
 
-    mkdir Sales.Endpoints    
-    cd Sales.Endpoints
-	dotnet new nsbdockercontainer
 
-Add the NServiceBus.RabbitMQ package to the Sales.Endpoints project
+In the `Hosts.cs` file:
 
-`Install-Package NServiceBus.RabbitMQ`
+1. Change `EndpointName` to `sales`
+2. Edit the `EndpointConfiguration` settings to use `Infrastructure.Endpoint.EndpointConfigurationBuilder`
 
-In Visual Studio add the new project to the Sales solution folder
+### Configure Docker ###
+1. Add a `shipping` service to the `/src/docker-compose.yaml` file
 
-Edit the Hosts.cs file and change the following:
-
-- Change `EndpointName` to `sales`
-
-- Edit the `EndpointConfiguration` object's setting to match those in the store-web
-
-Add a `Sales.Endpoints.PlaceOrderHandler` to handle the `PlaceOrder` command
-
-Add a `shipping` service to the `/src/docker-compose.yaml` file
+### Handle the PlaceOrder Command ###
+1. Add a `Sales.Endpoints.PlaceOrderHandler` to handle the `PlaceOrder` command
 
 
  
 ## Step Three ##
 This steps adds publishing of the`OrderPlaced` event in the `PlaceOrderHandler` and handling it using the Billing endpoint.
 
-From the `\src` directory run the following commands to create a Billing.Endpoints project using the NServiceBus Docker Container template: 
+### Create a Billing Endpoint Project ###
 
-    mkdir Billing.Endpoints    
-    cd Billing.Endpoints
-	dotnet new nsbdockercontainer
+1. Open a command window to the `\src` directory and run the command: `dotnet new nsbdockercontainer -n Billing.Endpoints` 
+2. In Visual Studio add the created project to the `Billing` solution folder.
+3. Add the NServiceBus.RabbitMQ package to the `Billing.Endpoints` project: `Install-Package NServiceBus.RabbitMQ`
 
-Add the NServiceBus.RabbitMQ package to the Billing.Endpoints project
 
-`Install-Package NServiceBus.RabbitMQ`
+### Configure NServiceBus ###
+In the 'Hosts.cs' file:
 
-In Visual Studio add the created project to the Billing solution folder.
-Edit the Hosts.cs file
-Change `EndpointName` to `billing`
+1. Change `EndpointName` to `billing`
+2. Edit the `EndpointConfiguration` settings to use `Infrastructure.Endpoint.EndpointConfigurationBuilder`
 
-Edit the EndpointConfiguration settings to use Infrastructure.Endpoint.
+### Configure Docker ###
+1. Add a `billing` service to the `/src/docker-compose.yaml` file
 
-Create an `OrderPlaced` event in `Sales.Messages.Events`
+### Publish the OrderPlaced Event ###
+1. Create an `OrderPlaced` event in `Sales.Messages.Events`
+2. Publish the `OrderPlaced` event from the `Sales.Endpoints.PlaceOrderHandler` handler
 
-Publish the `OrderPlaced` event from the `Sales.Endpoints.PlaceOrderHandler` handler
+### Handle the OrderPlaced Event ###
+1. Add a `Billing.Endpoints.OrderPlacedHandler` to handle the `OrderPlaced` event
 
-Add a `Billing.Endpoints.OrderPlacedHandler` to handle the `OrderPlaced` event
-
-Add a `billing` service to the `/src/docker-compose.yaml` file
 
 
 ## Step Four ##
 This steps adds handling of the `OrderPlaced` event in the Shipping endpoint.
 
-From the `\src` directory run the following commands to create a Shipping.Endpoints project using the NServiceBus Docker Container template: 
+### Create a Shipping Endpoint Project ###
 
-    mkdir Shipping.Endpoints    
-    cd Shipping.Endpoints
-	dotnet new nsbdockercontainer
+1. Open a command window to the `\src` directory and run the command: `dotnet new nsbdockercontainer -n Shipping.Endpoints`.
+2. Add the NServiceBus.RabbitMQ package to the Billing.Endpoints project: `Install-Package NServiceBus.RabbitMQ`
+3. In Visual Studio add the created project to the Billing solution folder.
 
-Add the NServiceBus.RabbitMQ package to the Billing.Endpoints project
+### Configure NServiceBus ###
+In the the `Hosts.cs` file
 
-`Install-Package NServiceBus.RabbitMQ`
+1. Change `EndpointName` to `shipping`
+2. Edit the `EndpointConfiguration` settings to use `Infrastructure.Endpoint.EndpointConfigurationBuilder`
 
-In Visual Studio add the created project to the Billing solution folder.
-Edit the Hosts.cs file
-Change `EndpointName` to `shipping`
-Edit the EndpointConfiguration settings to use Infrastructure.Endpoint.
+### Configure Docker ###
+2. Add a `shipping` service to the `/src/docker-compose.yaml` file.
 
-Add a `Shipping.Endpoints.OrderPlacedHandler` to handle the `OrderPlaced` event
+### Create an OrderPlaced Handler ###
 
-Add a `shipping` service to the `/src/docker-compose.yaml` file
+1. Add a `Shipping.Endpoints.OrderPlacedHandler` to handle the `OrderPlaced` event
 
 
 ## Step Five ##
 This steps adds publishing of `OrderBilled` event and handling of it in the Shipping endpoint.
 
-In the `Billing.Endpoints.OrderPlacedHandler` publish an `OrderBilled` event.
-Create a Billing.Messages project with an Events directly that contains the `OrderBilled` event.  This event just needs an `OrderId` property. 
-
-Add a `Shipping.Endpoints.OrderBilledHandler` to handle the `OrderBilled` event
+1. In the `Billing.Endpoints.OrderPlacedHandler` publish an `OrderBilled` event.
+2. Create a `Billing.Messages` project with an `Events` directly and add an `OrderBilled` event class.  This event just needs an `OrderId` property.
+2. Add a `Shipping.Endpoints.OrderBilledHandler` to handle the `OrderBilled` event
 
 At this point the system publishes the OrderPlaced event which is handled by Shipping and Billing.  Billing is publishing an OrderBilled event which completes the billing part of the order but the order can't be shipped yet because Shipping cannot determine if both the OrderPlaced and OrderBilled events have occurred.  We need a Saga in order to do that which we will do in the next step. 
+
+
+## Step Six ##
+This step is based on the tutorial [NServiceBus sagas: Getting started](https://docs.particular.net/tutorials/nservicebus-sagas/1-getting-started/) tutorial.  In this step we are replacing the `OrderPlaced` and `OrderBilled` event handlers in Shipping with a Saga. 
+
+### Refactor Existing Shipping Handlers ###
+We are going to move the two handlers in Shipping into a single handler called ShippingPolicy.
+  
+1. Create a `ShippingPolicy` class in the Shipping.Endpoints project and configure it to handle the `OrderPlaced` and `OrderBilled` events.
+
+2. Delete the existing two handler classes in the Shipping.Endpoints/Handlers folder.
+
+### Create a Saga ###
+1. Create a `ShippingPolicyData` class that has properties to track whether or not the OrderPlaces and OrderBilled events have occurred.  Define this class as an internal class to `ShippingPolicy`.
+
+2. Tell the Saga to use the `ShippingPolicyData` class by inheriting from `Saga<ShippingPolicy.ShippingPolicyData>` and implement the abstract `ConfigureHowToFindSaga` member.
+
+3. Configure the Saga to start by the `OrderPlaced` or `OrderBilled` events.
