@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
-using NServiceBus;
+﻿using NServiceBus;
 using NServiceBus.Logging;
 using Sales.Messages.Events;
+using System.Threading.Tasks;
 
 namespace Shipping.Endpoints.Handlers
 {
@@ -11,10 +11,8 @@ namespace Shipping.Endpoints.Handlers
 
 		public Task Handle(OrderPlaced message, IMessageHandlerContext context)
 		{
-			// TODO: This is where you would load the customers shipping information and process
-			Log.Info($"******************** PlaceOrder for order id '{message.OrderId}' ********************");
-
-			return Task.Delay(3000);
+			Log.Info($"******************* Received OrderPlaced, OrderId = {message.OrderId} - Should we ship now? ******************");
+			return Task.CompletedTask;
 		}
 	}
 }

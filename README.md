@@ -101,7 +101,7 @@ Add a `billing` service to the `/src/docker-compose.yaml` file
 
 
 ## Step Four ##
-This steps adds handling of the OrderPlaced event using the Shipping endpoint.
+This steps adds handling of the `OrderPlaced` event in the Shipping endpoint.
 
 From the `\src` directory run the following commands to create a Shipping.Endpoints project using the NServiceBus Docker Container template: 
 
@@ -121,3 +121,14 @@ Edit the EndpointConfiguration settings to use Infrastructure.Endpoint.
 Add a `Shipping.Endpoints.OrderPlacedHandler` to handle the `OrderPlaced` event
 
 Add a `shipping` service to the `/src/docker-compose.yaml` file
+
+
+## Step Five ##
+This steps adds publishing of `OrderBilled` event and handling of it in the Shipping endpoint.
+
+In the `Billing.Endpoints.OrderPlacedHandler` publish an `OrderBilled` event.
+Create a Billing.Messages project with an Events directly that contains the `OrderBilled` event.  This event just needs an `OrderId` property. 
+
+Add a `Shipping.Endpoints.OrderBilledHandler` to handle the `OrderBilled` event
+
+At this point the system publishes the OrderPlaced event which is handled by Shipping and Billing.  Billing is publishing an OrderBilled event which completes the billing part of the order but the order can't be shipped yet because Shipping cannot determine if both the OrderPlaced and OrderBilled events have occurred.  We need a Saga in order to do that which we will do in the next step. 
