@@ -140,3 +140,17 @@ We are going to move the two handlers in Shipping into a single handler called S
 2. Tell the Saga to use the `ShippingPolicyData` class by inheriting from `Saga<ShippingPolicy.ShippingPolicyData>` and implement the abstract `ConfigureHowToFindSaga` member.
 
 3. Configure the Saga to start by the `OrderPlaced` or `OrderBilled` events.
+
+
+## Step Seven ##
+The shipping carrier we use can sometimes has issues getting our shipments out on time so we want to update our Saga so that if an order is not shipped (i.e., we have not received the `OrderShipped` event) within ten seconds some action should be taken.
+ 
+This step adds a [Saga Timeout](https://docs.particular.net/nservicebus/sagas/timeouts "Saga Timeout") called `OrderShippingLate `.
+
+1. In `ShipOrderHandler` publish an `OrderShipped` event
+2. Update `ShippingPolicy` Saga to be started by the `OrderShipped` event and add it to the `ConfigureHowToFindSaga` method.  Add a handle method and set an `IsShipped` value on `ShippingPolicyData` to true.
+3. In `ShippingPolicy.ProcessOrder()` move `MarkAsComplete()` inside an new conditional that checks all order requirements have been met.
+4. In the `ProcessOrder` method request a `OrderShippingLate` timeout after the `ShipOrder` command is sent.
+5. Update the `ShippingPolicy` Saga to handle the Timeout: `IHandleTimeouts<OrderShippingLate>`
+6. Update `ShipOrderHandler` to have a delay or throw exception so the `OrderShipped` event is not raised before the timeout period.
+7. In the Shipping `Host.cs` disable delayed and immediate retries to make it easier to demo
