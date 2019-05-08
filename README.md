@@ -28,13 +28,14 @@ Password: `password`
 
 To stop RabbitMQ run `docker-compose down`
 
-
 ## Step One ##
 This step starts you out with a working web site that allows you to checkout and place an order but does not publish any events and there are no endpoints yet.
 
-1. Run the project in Visual Studio with <kbd>F5</kbd> to launch the store web site at http://localhost:32773/
-2. Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the `PlaceOrder` command that will be added in step two.
-3. Click **Place your order** to see that the `CheckoutController.PlaceOrder()` action method is called and the confirmation page is loaded.  In the next step you will publish the `PlaceOrder` command from this action method.
+1. Open the retail-demo solution located the `step-one` folder in Visual Studio
+2. Set the **docker-compose** project as the startup project for the solution
+3. Run the project in Visual Studio with <kbd>F5</kbd> to launch the store web site at http://localhost:32773/
+4. Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the `PlaceOrder` command that will be added in step two.
+5. Click **Place your order** to see that the `CheckoutController.PlaceOrder()` action method is called and the confirmation page is loaded.  In the next step you will publish the `PlaceOrder` command from this action method.
 
 
 ## Step Two ##
@@ -47,7 +48,7 @@ From a command or bash window
 1. Run `dotnet new -i "ParticularTemplates::*"` to install the NServiceBus dotnet new template
 2. Change to the `\src` directory and run the command: `dotnet new nsbdockercontainer -n Sales.Endpoints`
 3. In Visual Studio add the new project to the `Sales` solution folder
-3. Add the NServiceBus.RabbitMQ package to the Sales.Endpoints project: `Install-Package NServiceBus.RabbitMQ`
+4. Add the NServiceBus.RabbitMQ package to the Sales.Endpoints project: `Install-Package NServiceBus.RabbitMQ`
 
 
 In the `Hosts.cs` file:
