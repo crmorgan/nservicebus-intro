@@ -1,84 +1,81 @@
-﻿using Billing.Messages.Events;
+﻿using System;
+using System.Threading.Tasks;
+using Billing.Messages.Events;
 using NServiceBus;
 using NServiceBus.Logging;
 using Sales.Messages.Events;
+using Shipping.Messages.Commands;
 using Shipping.Messages.Events;
-using System;
-using System.Threading.Tasks;
 
 namespace Shipping.Endpoints
 {
-	public class ShippingPolicy : Saga<ShippingPolicy.ShippingPolicyData>,
-		IAmStartedByMessages<OrderPlaced>,
-		IAmStartedByMessages<OrderBilled>,
-		IAmStartedByMessages<OrderShipped>,
-		IHandleTimeouts<ShippingPolicy.OrderShippingLate>
-	{
-		private static readonly ILog Log = LogManager.GetLogger<ShippingPolicy>();
+    public class ShippingPolicy : Saga<ShippingPolicyData>, 
+                                  IAmStartedByMessages<OrderPlaced>, 
+                                  IAmStartedByMessages<OrderBilled>,
+                                  IHandleMessages<OrderShipped>,
+                                  IHandleTimeouts<OrderShippingPickupTimeExceeded>
+    {
+        private static readonly ILog Log = LogManager.GetLogger<ShippingPolicy>();
 
-		public Task Handle(OrderPlaced message, IMessageHandlerContext context)
-		{
-			Log.Info($"******************* Received OrderPlaced, OrderId = {message.OrderId} - Should we ship now? ******************");
-			Data.IsOrderPlaced = true;
-			return ProcessOrder(context);
-		}
+        public Task Handle(OrderPlaced message, IMessageHandlerContext context)
+        {
+            Log.Info($"******************* Received OrderPlaced, OrderId = {message.OrderId} ******************");
+            Data.IsOrderPlaced = true;
+            return ProcessOrder(context);
+        }
 
-		public Task Handle(OrderBilled message, IMessageHandlerContext context)
-		{
-			Log.Info($"******************* Received OrderBilled, OrderId = {message.OrderId} - Should we ship now? ******************");
-			Data.IsOrderBilled = true;
-			return ProcessOrder(context);
-		}
+        public Task Handle(OrderBilled message, IMessageHandlerContext context)
+        {
+            Log.Info($"******************* Received OrderBilled, OrderId = {message.OrderId} ******************");
+            Data.IsOrderBilled = true;
+            return ProcessOrder(context);
+        }
 
-		public Task Handle(OrderShipped message, IMessageHandlerContext context)
-		{
-			Log.Info($"******************* Received OrderShipped, OrderId = {message.OrderId} ******************");
-			Data.IsOrderShipped = true;
-			return ProcessOrder(context);
-		}
+        public Task Handle(OrderShipped message, IMessageHandlerContext context)
+        {
+            Log.Info($"******************* Received OrderShipped, OrderId = {message.OrderId} ******************");
+            Data.IsShipped = true;
+            return ProcessOrder(context);
+        }
 
-		public Task Timeout(OrderShippingLate state, IMessageHandlerContext context)
-		{
-			Log.Info($"******************* Received OrderShippingLate timeout, OrderId = {Data.OrderId} ******************");
-			return Task.CompletedTask;
-		}
+        protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShippingPolicyData> mapper)
+        {
+            mapper.ConfigureMapping<OrderPlaced>(message => message.OrderId)
+                  .ToSaga(sagaData => sagaData.OrderId);
 
-		private async Task ProcessOrder(IMessageHandlerContext context)
-		{
-			if (Data.IsOrderPlaced && Data.IsOrderBilled && !Data.IsOrderShipped)
-			{
-				Log.Info($"******************* Processing order, OrderId = {Data.OrderId} - Order can now be shipped! ******************");
+            mapper.ConfigureMapping<OrderBilled>(message => message.OrderId)
+                  .ToSaga(sagaData => sagaData.OrderId);
 
-				await context.SendLocal(new ShipOrder { OrderId = Data.OrderId });
-				await RequestTimeout<OrderShippingLate>(context, TimeSpan.FromSeconds(10));
-			}
-			else if (Data.IsOrderPlaced && Data.IsOrderBilled && Data.IsOrderShipped)
-			{
-				Log.Info($"******************* Shipping completed, OrderId = {Data.OrderId} ******************");
-				MarkAsComplete();
-			}
-		}
+            mapper.ConfigureMapping<OrderShipped>(message => message.OrderId)
+                  .ToSaga(sagaData => sagaData.OrderId);
+        }
 
-		protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShippingPolicyData> mapper)
-		{
-			mapper.ConfigureMapping<OrderPlaced>(message => message.OrderId)
-				.ToSaga(sagaData => sagaData.OrderId);
+        private async Task ProcessOrder(IMessageHandlerContext context)
+        {
+            if (Data.IsOrderPlaced && Data.IsOrderBilled && Data.IsShipped)
+            {
+                await context.SendLocal(new ShipOrder { OrderId = Data.OrderId });
+                await RequestTimeout<OrderShippingPickupTimeExceeded>(context, TimeSpan.FromSeconds(20));
+            }
+        }
 
-			mapper.ConfigureMapping<OrderBilled>(message => message.OrderId)
-				.ToSaga(sagaData => sagaData.OrderId);
+        public async Task Timeout(OrderShippingPickupTimeExceeded state, IMessageHandlerContext context)
+        {
+            Log.Info($"******************* Received OrderShipped, OrderId = {Data.OrderId} ******************");
+            MarkAsComplete();
+            await Task.CompletedTask;
+        }
+    }
 
-			mapper.ConfigureMapping<OrderShipped>(message => message.OrderId)
-				.ToSaga(sagaData => sagaData.OrderId);
-		}
+    public class OrderShippingPickupTimeExceeded
+    {
+    }
 
-		public class ShippingPolicyData : ContainSagaData
-		{
-			public int OrderId { get; set; }
-			public bool IsOrderPlaced { get; set; }
-			public bool IsOrderBilled { get; set; }
-			public bool IsOrderShipped { get; set; }
-		}
-
-		public class OrderShippingLate {}
-	}
+    public class ShippingPolicyData : ContainSagaData
+    {
+        public int OrderId { get; set; }
+        public bool IsOrderPlaced { get; set; }
+        public bool IsOrderBilled { get; set; }
+        public bool IsShipped { get; set; }
+    }
 }

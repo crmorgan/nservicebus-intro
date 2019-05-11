@@ -1,0 +1,22 @@
+version: '3.4'
+
+services:
+  store-web:
+    image: storeweb
+    build:
+      context: .
+      dockerfile: store-web/Dockerfile
+    environment:
+      servicebus_connection_string: ${servicebus_connection_string}
+  sales:
+    image: sales
+    build:
+      context: .
+      dockerfile: Sales.Endpoints/Dockerfile
+    environment:
+      servicebus_connection_string: ${servicebus_connection_string}
+
+networks:
+  default:
+    external:
+      name: retail-demo
