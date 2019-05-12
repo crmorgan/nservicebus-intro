@@ -13,7 +13,6 @@ namespace Infrastructure
             _endpointConfiguration = new EndpointConfiguration(endpointName);
 
             // setup general
-            _endpointConfiguration.UsePersistence<LearningPersistence>();
             _endpointConfiguration.UseSerialization<NewtonsoftSerializer>();
             _endpointConfiguration.EnableInstallers();
 
@@ -30,6 +29,12 @@ namespace Infrastructure
         public EndpointConfigurationBuilder AsSendOnly()
         {
             _endpointConfiguration.SendOnly();
+            return this;
+        }
+
+        public EndpointConfigurationBuilder WithPersistence()
+        {
+            _endpointConfiguration.UsePersistence<LearningPersistence>();
             return this;
         }
 

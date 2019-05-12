@@ -1,9 +1,11 @@
-# NServiceBus Retail Demo with .NET Core
+# NServiceBus Retail Demo
 **With .NET Core, Docker, and RabbitMQ**
 
-This is a sample project that gives you and introduction into to building distributed systems with NServiceBus.  The project is based on Particular's tutorial at https://docs.particular.net/tutorials/intro-to-nservicebus/3-multiple-endpoints but is using NServiceBus version 7, Docker containers, and RabbitMQ as the transport.
+This is a sample project that gives you and introduction into to building distributed systems with NServiceBus.  The project is based on Particular's [Multiple Endpoints](https://docs.particular.net/tutorials/intro-to-nservicebus/3-multiple-endpoints) using .NET Core, Docker containers, and RabbitMQ.
 
-An accompanying slide deck that introduces some of the concepts of distributed systems and Service Oriented Architecure is also available at https://www.slideshare.net/ChrisMorgan8/introduction-to-microservices-with-nservice-bus.
+The sample project is an e-commerce site where you can order some products.  You will be building microservices for Sales, Billing and Shipping.
+
+An accompanying slide deck that introduces some of the concepts of distributed systems and Service Oriented Architecure is available at https://www.slideshare.net/ChrisMorgan8/introduction-to-microservices-with-nservice-bus.
 
 Each of the steps in this exercise have fully completed source code or you can start with the solution in the `exercise` folder and code along.
 
@@ -12,65 +14,78 @@ Each of the steps in this exercise have fully completed source code or you can s
 - Visual Studio 2017 or higher (community edition is fine)
 - Docker for Windows with Linux container support enabled
 
-### Start RabbitMQ ###
+# RabbitMQ
 This exercise will be using RabbitMQ which you can run in a Docker container using the supplied Docker Compose file.
 
-1. Open a command or powershell prompt and change to the root directory of where you cloned the repository to.
-2. Run `docker-compose up -d` to start the container in a detached mode.
+## Start the RabbitMQ Container
 
-You can now access the RabbitMQ Management console at http://localhost:15672 and login as the`retaildemo` with password `password`.
+1. Open a command or powershell shell and change to the root directory of where you cloned this repository to.
+2. Execute `docker-compose up -d` to start the container in a detached mode.
+
+You can now access the RabbitMQ Management console at http://localhost:15672 and login as  `retaildemo` with the password `password`.
 
 To stop RabbitMQ run the `docker-compose down` command.
 
 # Step One #
-This step starts you out with a web site named store-web that simulates a shopping cart checkout.  Follow the steps below to run the web site and place on order.
+This step starts you out with a web site called **store-web** that simulates a shopping cart checkout and will starting the ordering process by sending a `PlaceOrder` command to the **Sales** microservice.
 
-1. Open the retail-demo solution located the `nservicebus-intro/src/exercise` folder in Visual Studio
-2. Set the **docker-compose** project as the startup project for the solution
-3. Run the project in Visual Studio with <kbd>F5</kbd> and access the store web site at http://localhost:32773/
-4. Click the **proceed to checkout** button to go to the checkout page.  Here you will see that there is an order id that has been generated that will be sent to the `PlaceOrder` command that will be added in step two.
-5. Click **Place your order** to see that the `CheckoutController.PlaceOrder()` action method is called and the confirmation page is loaded.
+1. Open the **retail-demo** solution located in the `nservicebus-intro/src/exercise` folder.
 
-### NServiceBus Endpoint Configuration ###
-The store-web project has been setup as an NServiceBus endpoint host.  Open the `store-web/Startup.cs` file and review the `AddEndpoint` method to see how an NServiceBus `EndpointConfiguration` object is instanciated and configured.  For details on what is going on here checkout https://docs.particular.net/samples/endpoint-configuration/.
+In the solution at this point is an ASP.NET Core web site, a DockerCompose project, an Infrastructure project, and solution folders for the three services you will be creating.  Each service folder contains a messages project.
 
-In this demo there will be a few projects that will have a similar configuration and to make this simpler I have encapsulated this in the `Infrastructure.EndpointConfigurationBuilder` class.
+### Run the web site ###
 
-Replace the `AddEndpoint` method with the following code to use the builder:
+Follow the steps below to run the web site and place on order.  This is also where the code in the `exercise` folder starts out and is the directory the rest of this guid will refer to.
 
-```cs
-private void AddEndpoint(IServiceCollection services)
-{
-    Log.Info("****************** Store website endpoint starting ******************");
+1. Set the **docker-compose** project as the startup project for the solution.
+2. Run the project in Visual Studio with <kbd>F5</kbd> and access the web site at http://localhost:32773/.
+3. Click the **proceed to checkout** button to go to the checkout page.  Here you will see an order id that has been generated that will be sent to the `PlaceOrder` command you will implement in step two.
+4. Click **Place your order** to place an order.
 
-    var connectionString = Environment.GetEnvironmentVariable("servicebus_connection_string");
-    var endpointConfiguration = new EndpointConfigurationBuilder("store-web", connectionString)
-                                        .AsSendOnly()
-                                        .Build();
-    
-    // start the endpoint
-    var endpointInstance = Endpoint.Start(endpointConfiguration).GetAwaiter().GetResult();
-    Log.Info("****************** Store website endpoint successfully started ******************");
+At this point the `CheckoutController.PlaceOrder()` action method is called which then redirects to a confirmation page but is not sending the `PlaceOrder` command so lets add that now.
 
-    // register endpoint instance with the IoC framework
-    services.AddSingleton<IMessageSession>(endpointInstance);
-}
-```
+### Configure an NServiceBus Endpoint ###
+To make the **store-web** project an [endpoint](https://docs.particular.net/nservicebus/endpoints/) you need to install the `NServiceBus` and `NServiceBus.RabbitMQ` pacakges from NuGet and then configure and start an endpoint object during application startup.
 
-You can remove the `NServiceBus.RabbitMQ` NuGet package from the store-web project if you like since that will now come from the `Infrastructure.EndpointConfigurationBuilder` project.
+1. Open the `store-web/Startup.cs` file and review the `AddEndpoint` method to see how an endpoint is configured and started.
+
+You can learn more about endpoint configuration options [here]( https://docs.particular.net/samples/endpoint-configuration/).
+
+Since there are a few projects in this demo that are endpoints I have created a `Infrastructure.EndpointConfigurationBuilder` class to help with this.  Lets go ahead and change out the **store-web** configuration to use the builder.
+
+1. Replace the `AddEndpoint` method with the following code to use the builder:
+
+    ```cs
+    private void AddEndpoint(IServiceCollection services)
+    {
+        Log.Info("****************** Store website endpoint starting ******************");
+
+        var connectionString = Environment.GetEnvironmentVariable("servicebus_connection_string");
+        var endpointConfiguration = new EndpointConfigurationBuilder("store-web", connectionString)
+                                            .AsSendOnly()
+                                            .Build();
+        
+        // start the endpoint
+        var endpointInstance = Endpoint.Start(endpointConfiguration).GetAwaiter().GetResult();
+        Log.Info("****************** Store website endpoint successfully started ******************");
+
+        // register endpoint instance with the IoC framework
+        services.AddSingleton<IMessageSession>(endpointInstance);
+    }
+    ```
+2. You can remove the `NServiceBus.RabbitMQ` NuGet package from the store-web project if you like since that will now come from the `Infrastructure.EndpointConfigurationBuilder` project.
 
 > As of 5/10/2019 the Particular dotnet new template is using NSB version 7.1.4 and NServiceBus.Newtonsoft.Json version 2.1.0 and is compatible with the version of NServiceBus and NServiceBus.RabbitMQ version 5.0.2 used in the Infrastructure project.  If the NServiceBus version your Particular dotnet new template uses is differnt than this you may have to upgrade/downgrade the Infrastructure project's NServiceBus version so they are compatible.
 
 # Step Two #
-In this step you will add a Sales microservice that handles a `PlaceOrder` command sent by the web site's checkout process.
-s
-### Create a Sales Endpoint ###
-Here you are going to use the dotnet CLI and NServiceBus project templates to create a project that will be the enpoint host for the Sales microservice.
+In this step you will add a **Sales** microservice that handles a `PlaceOrder` command sent by the web site's checkout process.
 
-1. Open a command prompt, Package Manager Console in Visual Studio, or your prefered command shell.
-2. Run `dotnet new -i "ParticularTemplates"` to install the latest version of the [Particular dotnet new Templates](https://docs.particular.net/nservicebus/dotnet-templates).
-3. Change to the `nservicebus-intro/src/exercise` directory and run the command `dotnet new nsbdockercontainer -n Sales.Endpoints` to create the new Sales.Endpoints project.
-4. In Visual Studio add the project to the `Sales` solution folder using Add Existing Project.  There is already a `Sales.Messages` project in the `Sales` solution folder.  This is a regular netstandard class library project that will be used later on in this step.
+### Create a Sales Endpoint ###
+Lets use the dotnet CLI and NServiceBus project templates to create a project that will be the endpoint host for the **Sales** service.
+
+1. From your favorite command shell run `dotnet new -i "ParticularTemplates"` to install the latest version of the [Particular dotnet new Templates](https://docs.particular.net/nservicebus/dotnet-templates).
+2. Change to the `nservicebus-intro/src/exercise` directory and run `dotnet new nsbdockercontainer -n Sales.Endpoints` to create the new **Sales.Endpoints** project.
+3. In Visual Studio add the project to the `Sales` solution folder using Add Existing Project.  There is already a `Sales.Messages` project in the `Sales` solution folder which is a netstandard class library project that will be used later on in this step.
 
 ### Configure NServiceBus Endpoint ###
 In the `Hosts.cs` file:
@@ -93,7 +108,7 @@ In the `Hosts.cs` file:
     ```
 
 ### Configure Docker ###
-This project is using Docker Compose to run all the containers when you run the solution.  The new Sales.Endpoints project was already configured to be a Docker container when it was created so all you have to now is add it to the solutions docker-compose file.
+The solution is using Docker Compose to run all the containers.  The new **Sales.Endpoints** project is already configured to be a Docker container so all you have to do now is add it to the solutions docker-compose file.
 
 1. Open the `nservicebus-intro/src/exercise/docker-compose.yaml` file and add the following configuration in the services node at the same level as the store-web service configuration:
 
@@ -107,7 +122,7 @@ This project is using Docker Compose to run all the containers when you run the 
         servicebus_connection_string: ${servicebus_connection_string}
     ```
 
-The `servicebus_connection_string` is an environment variable that is set in the `nservicebus-intro/src/exercise/.env` file.
+The `servicebus_connection_string` is an environment variable defined in the `nservicebus-intro/src/exercise/.env` file.
 
 ### Handle the PlaceOrder Command ###
 1. Create a `Sales.Endpoints.PlaceOrderHandler` class that implements `NServiceBus.IHandleMessages<PlaceOrder>`.  The `PlaceOrder` class is in the `Sales.Messages` project.
@@ -128,7 +143,7 @@ The `servicebus_connection_string` is an environment variable that is set in the
     }
     ```
 ### Send the ShipOrder Command ###
-1. Update the store-web endpoint configuration in `Startup.cs` so it routes `PlaceOrder` command messages to the `sales` endpoint.
+1. Update the store-web endpoint configuration in `Startup.cs` so it routes the `PlaceOrder` command messages to the **sales** endpoint.
     ```cs
         var endpointConfiguration = new EndpointConfigurationBuilder("store-web", connectionString)
                                             .AsSendOnly()
@@ -155,7 +170,7 @@ The `servicebus_connection_string` is an environment variable that is set in the
 Run the solution and place an order using the web site.
 
 # Step Three #
-This step adds a new Billing microservice that processes payments for an order. The Billing service will subscribe to an `OrderPlaced` event that is published by the Sales service.
+This step adds a new **Billing** microservice that processes payments for an order. The **Billing** service will subscribe to an `OrderPlaced` event that is published by the **Sales** service.
 
 ### Create a Billing Endpoint Project ###
 
@@ -372,9 +387,16 @@ Move the two handlers into a single handler called `ShippingPolicy`.
 2. Delete the existing two handler classes in the Shipping.Endpoints folder.
 
 ### Saga Data ###
-Sagas persist data using a [persister](https://docs.particular.net/persistence/) that is registered with the endpoint.  The `Infrastructure.EndpointConfigurationBuilder` is already doing this for you and is using the [LearningPersister](https://docs.particular.net/persistence/learning/) which simulates Saga persistence.
+Sagas persist data using a [persister](https://docs.particular.net/persistence/) that is registered with the endpoint.
 
-1. Create a `ShippingPolicyData` class that has properties to track whether or not the `OrderPlaced` and `OrderBilled` events have been received.  Since this data is only used by the Saga it can be an internal class to `ShippingPolicy`.
+1. Edit the `Shipping.Endpoints.Host.Start` method to use the `WithPersistence` method of the `Infrastructure.EndpointConfigurationBuilder`.  This will register the [LearningPersister](https://docs.particular.net/persistence/learning/) which simulates Saga persistence.
+    ```cs
+    var endpointConfiguration = new EndpointConfigurationBuilder(EndpointName, connectionString)
+                                            .WithPersistence()
+                                            .Build();
+    ```
+
+2. Create a `ShippingPolicyData` class that has properties to track whether or not the `OrderPlaced` and `OrderBilled` events have been received.  Since this data is only used by the Saga it can be an internal class to `ShippingPolicy`.
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, IAmStartedByMessages<OrderPlaced>, IAmStartedByMessages<OrderBilled>
     {
@@ -388,11 +410,11 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
         }
     }
     ```
-2. Make `ShippingPolicy` a Saga that uses `ShippingPolicyData` by having it inherit from from `Saga<ShippingPolicy.ShippingPolicyData>` and t
+3. Make `ShippingPolicy` a Saga that uses `ShippingPolicyData` by having it inherit from from `Saga<ShippingPolicy.ShippingPolicyData>` and t
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, IHandleMessages<OrderPlaced>, IHandleMessages<OrderBilled>
     ```
-3. Implement the abstract `ConfigureHowToFindSaga` member and tell the Saga how messages are correlated to a Saga instance.
+4. Implement the abstract `ConfigureHowToFindSaga` member and tell the Saga how messages are correlated to a Saga instance.
     ```cs
     protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShippingPolicyData> mapper)
     {
@@ -403,7 +425,7 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
             .ToSaga(sagaData => sagaData.OrderId);
     }
     ```
-4. Update both `Handle` methods so they set the corresponding flag on the `ShippingPolicyData` class using the Saga'a `Data` property.
+5. Update both `Handle` methods so they set the corresponding flag on the `ShippingPolicyData` class using the Saga'a `Data` property.
     ```cs
     public Task Handle(OrderPlaced message, IMessageHandlerContext context)
     {
@@ -419,11 +441,11 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
         return Task.CompletedTask;
     }
     ```
-5. Configure the Saga so it is started by both the `OrderPlaced` or `OrderBilled` events by using the `IAmStartedByMessages<T>` interface instead of `IHandleMessages<T>`.
+6. Configure the Saga so it is started by both the `OrderPlaced` or `OrderBilled` events by using the `IAmStartedByMessages<T>` interface instead of `IHandleMessages<T>`.
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, IAmStartedByMessages<OrderPlaced>, IAmStartedByMessages<OrderBilled>
     ```
-6. Add a `ProcessOrder` method to the `ShippingPolicy` class that will send a `ShipOrder` command and mark the Saga as complete if the order has been placed and billed.
+7. Add a `ProcessOrder` method to the `ShippingPolicy` class that will send a `ShipOrder` command and mark the Saga as complete if the order has been placed and billed.
     ```cs
     private async Task ProcessOrder(IMessageHandlerContext context)
     {
@@ -434,7 +456,7 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
         }
     }
     ```
-7. Update both `Handle` methods to call the new `ProcessOrder` method like this.
+8. Update both `Handle` methods to call the new `ProcessOrder` method like this.
    ```cs
     public Task Handle(OrderPlaced message, IMessageHandlerContext context)
     {
@@ -443,7 +465,7 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
         return ProcessOrder(context);
     }
     ```
-8. Add a `ShipOrderHandler` class to the `Shipping.Endpoints` project that will handle the `ShipOrder` command and publish an `OrderShipped` event.
+9.  Add a `ShipOrderHandler` class to the `Shipping.Endpoints` project that will handle the `ShipOrder` command and publish an `OrderShipped` event.
     ```cs
     public class ShipOrderHandler : IHandleMessages<ShipOrder>
     {

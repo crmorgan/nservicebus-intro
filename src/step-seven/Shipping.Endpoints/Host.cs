@@ -24,7 +24,9 @@ namespace Shipping.Endpoints
             try
             {
                 var connectionString = Environment.GetEnvironmentVariable("servicebus_connection_string");
-                var endpointConfiguration = new EndpointConfigurationBuilder(EndpointName, connectionString).Build();
+                var endpointConfiguration = new EndpointConfigurationBuilder(EndpointName, connectionString)
+                                            .WithPersistence()
+                                            .Build();
 
                 // start the endpoint
                 endpoint = await Endpoint.Start(endpointConfiguration);
