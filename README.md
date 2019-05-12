@@ -24,12 +24,12 @@ This exercise will be using RabbitMQ which you can run in a Docker container usi
 
 You can now access the RabbitMQ Management console at http://localhost:15672 and login as  `retaildemo` with the password `password`.
 
-To stop RabbitMQ run the `docker-compose down` command.
+To stop RabbitMQ execute the `docker-compose down` command.
 
 # Step One #
 This step starts you out with a web site called **store-web** that simulates a shopping cart checkout and will starting the ordering process by sending a `PlaceOrder` command to the **Sales** microservice.
 
-1. Open the **retail-demo** solution located in the `nservicebus-intro/src/exercise` folder.
+1. Open the **retail-demo** solution located in the `src/exercise` folder.
 
 In the solution at this point is an ASP.NET Core web site, a DockerCompose project, an Infrastructure project, and solution folders for the three services you will be creating.  Each service folder contains a messages project.
 
@@ -77,18 +77,22 @@ Since there are a few projects in this demo that are endpoints I have created a 
 
 > As of 5/10/2019 the Particular dotnet new template is using NSB version 7.1.4 and NServiceBus.Newtonsoft.Json version 2.1.0 and is compatible with the version of NServiceBus and NServiceBus.RabbitMQ version 5.0.2 used in the Infrastructure project.  If the NServiceBus version your Particular dotnet new template uses is differnt than this you may have to upgrade/downgrade the Infrastructure project's NServiceBus version so they are compatible.
 
-# Step Two #
+# Step Two - Sales
 In this step you will add a **Sales** microservice that handles a `PlaceOrder` command sent by the web site's checkout process.
 
-### Create a Sales Endpoint ###
-Lets use the dotnet CLI and NServiceBus project templates to create a project that will be the endpoint host for the **Sales** service.
+### Create a Sales Endpoints ###
+Lets use the dotnet CLI and the [Particular dotnet new Templates](https://docs.particular.net/nservicebus/dotnet-templates) to create a container project that will be the endpoint host for the **Sales** service.
 
-1. From your favorite command shell run `dotnet new -i "ParticularTemplates"` to install the latest version of the [Particular dotnet new Templates](https://docs.particular.net/nservicebus/dotnet-templates).
-2. Change to the `nservicebus-intro/src/exercise` directory and run `dotnet new nsbdockercontainer -n Sales.Endpoints` to create the new **Sales.Endpoints** project.
-3. In Visual Studio add the project to the `Sales` solution folder using Add Existing Project.  There is already a `Sales.Messages` project in the `Sales` solution folder which is a netstandard class library project that will be used later on in this step.
+1. From your favorite command shell execute `dotnet new -i "ParticularTemplates"` to install the latest version of the Particular dotnet new Templates.  You can be in any directory for this.
+2. Change to the `src/exercise` directory and execute `dotnet new nsbdockercontainer -n Sales.Endpoints` to create a **Sales.Endpoints** project.
+3. In Visual Studio right click on the `Sales` solution folder and select **Add Existing Project** then select the new **Sales.Endpoints.csproj** project.
+
+There is already a `Sales.Messages` project in the `Sales` solution folder.  This is a netstandard class library project that will be used later on in this step.
 
 ### Configure NServiceBus Endpoint ###
-In the `Hosts.cs` file:
+Like you did in the **store-web** project lets swap out the endpoint configuration code with the builder.
+
+In the **Sales.Endpoints** `Hosts.cs` file:
 
 1. Change the `EndpointName` property value to `sales`
    ```cs
@@ -108,9 +112,9 @@ In the `Hosts.cs` file:
     ```
 
 ### Configure Docker ###
-The solution is using Docker Compose to run all the containers.  The new **Sales.Endpoints** project is already configured to be a Docker container so all you have to do now is add it to the solutions docker-compose file.
+The solution is using Docker Compose to manage all the containers.  The new **Sales.Endpoints** project you added is already configured to be a Docker container so all you have to do now is add it to the solution's docker-compose file.
 
-1. Open the `nservicebus-intro/src/exercise/docker-compose.yaml` file and add the following configuration in the services node at the same level as the store-web service configuration:
+1. Open the `src/exercise/docker-compose.yaml` file and add the following configuration in the services node at the same level as the store-web service configuration:
 
     ```yaml
     sales:
@@ -122,7 +126,7 @@ The solution is using Docker Compose to run all the containers.  The new **Sales
         servicebus_connection_string: ${servicebus_connection_string}
     ```
 
-The `servicebus_connection_string` is an environment variable defined in the `nservicebus-intro/src/exercise/.env` file.
+The `servicebus_connection_string` is an environment variable defined in the `src/exercise/.env` file.
 
 ### Handle the PlaceOrder Command ###
 1. Create a `Sales.Endpoints.PlaceOrderHandler` class that implements `NServiceBus.IHandleMessages<PlaceOrder>`.  The `PlaceOrder` class is in the `Sales.Messages` project.
@@ -142,15 +146,17 @@ The `servicebus_connection_string` is an environment variable defined in the `ns
         }
     }
     ```
-### Send the ShipOrder Command ###
-1. Update the store-web endpoint configuration in `Startup.cs` so it routes the `PlaceOrder` command messages to the **sales** endpoint.
+### Send the PlaceOrder Command ###
+Next you need to have the web site send the `PlaceOrder` command to the **Sales** endpoint.  Unlike Events, Commands are routed to a specific endpoint. 
+
+1. Update the **store-web** endpoint's configuration in `Startup.cs` so it routes the `PlaceOrder` command messages to the **sales** endpoint using the builder's `RoutToEndpoint` method.
     ```cs
         var endpointConfiguration = new EndpointConfigurationBuilder("store-web", connectionString)
                                             .AsSendOnly()
                                             .RouteToEndpoint(typeof(PlaceOrder), "sales")
                                             .Build();
     ```
-2. Update the `CheckoutController.PlaceOrder` action method to send the `PlaceOrder` command when the place order button is clicked.
+2. Update the `CheckoutController.PlaceOrder` action method to send a `PlaceOrder` command when the **place order** button is clicked.
     ```cs
     public async Task<IActionResult> PlaceOrder(int orderId)
     {
@@ -167,15 +173,15 @@ The `servicebus_connection_string` is an environment variable defined in the `ns
     }
     ```
 
-Run the solution and place an order using the web site.
+Now you can run the solution and when you place an order the **Sales** service will receive the message.
 
-# Step Three #
+# Step Three - Billing
 This step adds a new **Billing** microservice that processes payments for an order. The **Billing** service will subscribe to an `OrderPlaced` event that is published by the **Sales** service.
 
-### Create a Billing Endpoint Project ###
+### Create a Billing Endpoints Project ###
 
-1. Open a command window to the `\src\step-one` directory and run the command: `dotnet new nsbdockercontainer -n Billing.Endpoints` 
-1. In Visual Studio add the created project to the `Billing` solution folder.
+1. Open a command window to the `\src\step-one` directory and execute the command: `dotnet new nsbdockercontainer -n Billing.Endpoints` 
+1. In Visual Studio add the created project to the **Billing** solution folder.
 
 ### Configure NServiceBus Endpoint ###
 In the `Hosts.cs` file:
@@ -198,9 +204,9 @@ In the `Hosts.cs` file:
     ```
 
 ### Configure Docker ###
-Add a `billing` service to the `nservicebus-intro/src/exercise/docker-compose.yaml` file.
+Add a `billing` service to the `src/exercise/docker-compose.yaml` file.
 
-1. Open the `nservicebus-intro/src/exercise/docker-compose.yaml` file and add the following configuration in the services node:
+1. Open the `src/exercise/docker-compose.yaml` file and add the following configuration in the services node:
     ```yaml
     billing:
         image: billing
@@ -249,14 +255,13 @@ Add a `billing` service to the `nservicebus-intro/src/exercise/docker-compose.ya
     ```
 The Billing service is now handling the `OrderPlaced` event and will charge the customer's credit card.
 
-# Step Four #
-In this step you are going to create a Shipping microservice that will also handle the `OrderPlaced` event which demonstrates having multiple endpoints handling a single event.
+# Step Four - Shipping #
+In this step you are going to create a **Shipping** microservice that will also handle the `OrderPlaced` event.  This demonstrates having multiple endpoints (**Billing** and **Shipping**) handling a single event.
 
-### Create a Shipping Endpoint Project ###
+### Create a Shipping Endpoints Project ###
 
-1. Change to the `nservicebus-intro/src/exercise` directory and run the command `dotnet new nsbdockercontainer -n Shipping.Endpoints` to create the new Shipping.Endpoints project.
-2. Add the NServiceBus.RabbitMQ package to the Billing.Endpoints project: `Install-Package NServiceBus.RabbitMQ`
-3. In Visual Studio add the created project to the Billing solution folder.
+1. Change to the `src/exercise` directory and execute the command `dotnet new nsbdockercontainer -n Shipping.Endpoints` to create the new **Shipping.Endpoints** project.
+2. In Visual Studio add the created project to the **Billing** solution folder.
 
 ### Configure NServiceBus Endpoint ###
 In the `Hosts.cs` file:
@@ -279,9 +284,9 @@ In the `Hosts.cs` file:
     ```
 
 ### Configure Docker ###
-Add a `shipping` service to the `nservicebus-intro/src/exercise/docker-compose.yaml` file.
+Add a `shipping` service to the `src/exercise/docker-compose.yaml` file.
 
-1. Open the `nservicebus-intro/src/exercise/docker-compose.yaml` file and add the following configuration in the services node:
+1. Open the `src/exercise/docker-compose.yaml` file and add the following configuration in the services node:
     ```yaml
     shipping:
         image: shipping
@@ -313,7 +318,7 @@ Add a `shipping` service to the `nservicebus-intro/src/exercise/docker-compose.y
     }
     ```
 
-# Step Five #
+# Step Five - Completing the Order
 This step adds publishing of an `OrderBilled` event by the **Billing** service which will be handled by the **Shipping** service.
 
 In the `Billing.Endpoints.OrderPlacedHandler` class update the `Handle` method so it publishes an `OrderBilled` event after the fake payment processing call.  The `OrderBilled` event has already been created in the **Billing.Messages** project.
@@ -353,14 +358,14 @@ Update **Shipping** to handle the `OrderBilled` event.
     ```
 
 ## When Should The Order Be Shipped? ##
-The **Shipping** service has a problem!  It shouldn't ship the order until it has received both the  `OrderPlaced` **and** `OrderBilled` events but in an eventually consistent system like this the `OrderBilled` event could arrive before `OrderPlaced`.  The **Shipping** service needs to track what events have arrived using a [Saga](https://docs.particular.net/nservicebus/sagas/).
+The **Shipping** service has a problem!  It shouldn't ship the order until it has received both the  `OrderPlaced` **and** `OrderBilled` events but in an eventually consistent system like this the `OrderBilled` event could arrive before `OrderPlaced`.  The **Shipping** service needs to track what events have arrived using a [saga](https://docs.particular.net/nservicebus/sagas/).
 
 # **Sagas** #
 
-# Step Six #
+# Step Six - Shipping Policy 
 This step is based on the [NServiceBus sagas: Getting started](https://docs.particular.net/tutorials/nservicebus-sagas/1-getting-started/) tutorial.
 
-In this step we are replacing the `OrderPlacedHandler` and `OrderBilledHandler` handlers in the **Shipping** service with a Saga.
+In this step we are replacing the `OrderPlacedHandler` and `OrderBilledHandler` handlers in the **Shipping** service with a saga.
 
 ## Refactor Existing Shipping Handlers ##
 Move the two handlers into a single handler called `ShippingPolicy`.
@@ -389,14 +394,14 @@ Move the two handlers into a single handler called `ShippingPolicy`.
 ### Saga Data ###
 Sagas persist data using a [persister](https://docs.particular.net/persistence/) that is registered with the endpoint.
 
-1. Edit the `Shipping.Endpoints.Host.Start` method to use the `WithPersistence` method of the `Infrastructure.EndpointConfigurationBuilder`.  This will register the [LearningPersister](https://docs.particular.net/persistence/learning/) which simulates Saga persistence.
+1. Edit the `Shipping.Endpoints.Host.Start` method to use the `WithPersistence` method of the `Infrastructure.EndpointConfigurationBuilder`.  This will register the [LearningPersister](https://docs.particular.net/persistence/learning/) which simulates saga persistence.
     ```cs
     var endpointConfiguration = new EndpointConfigurationBuilder(EndpointName, connectionString)
                                             .WithPersistence()
                                             .Build();
     ```
 
-2. Create a `ShippingPolicyData` class that has properties to track whether or not the `OrderPlaced` and `OrderBilled` events have been received.  Since this data is only used by the Saga it can be an internal class to `ShippingPolicy`.
+2. Create a `ShippingPolicyData` class that has properties to track whether or not the `OrderPlaced` and `OrderBilled` events have been received.  Since this data is only used by the saga it can be an internal class to `ShippingPolicy`.
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, IAmStartedByMessages<OrderPlaced>, IAmStartedByMessages<OrderBilled>
     {
@@ -410,11 +415,11 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
         }
     }
     ```
-3. Make `ShippingPolicy` a Saga that uses `ShippingPolicyData` by having it inherit from from `Saga<ShippingPolicy.ShippingPolicyData>` and t
+3. Make `ShippingPolicy` a saga that uses `ShippingPolicyData` by having it inherit from from `Saga<ShippingPolicy.ShippingPolicyData>` and t
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, IHandleMessages<OrderPlaced>, IHandleMessages<OrderBilled>
     ```
-4. Implement the abstract `ConfigureHowToFindSaga` member and tell the Saga how messages are correlated to a Saga instance.
+4. Implement the abstract `ConfigureHowToFindSaga` member and tell the saga how messages are correlated to a saga instance.
     ```cs
     protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShippingPolicyData> mapper)
     {
@@ -425,7 +430,7 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
             .ToSaga(sagaData => sagaData.OrderId);
     }
     ```
-5. Update both `Handle` methods so they set the corresponding flag on the `ShippingPolicyData` class using the Saga'a `Data` property.
+5. Update both `Handle` methods so they set the corresponding flag on the `ShippingPolicyData` class using the saga'a `Data` property.
     ```cs
     public Task Handle(OrderPlaced message, IMessageHandlerContext context)
     {
@@ -441,11 +446,11 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
         return Task.CompletedTask;
     }
     ```
-6. Configure the Saga so it is started by both the `OrderPlaced` or `OrderBilled` events by using the `IAmStartedByMessages<T>` interface instead of `IHandleMessages<T>`.
+6. Configure the saga so it is started by both the `OrderPlaced` or `OrderBilled` events by using the `IAmStartedByMessages<T>` interface instead of `IHandleMessages<T>`.
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, IAmStartedByMessages<OrderPlaced>, IAmStartedByMessages<OrderBilled>
     ```
-7. Add a `ProcessOrder` method to the `ShippingPolicy` class that will send a `ShipOrder` command and mark the Saga as complete if the order has been placed and billed.
+7. Add a `ProcessOrder` method to the `ShippingPolicy` class that will send a `ShipOrder` command and mark the saga as complete if the order has been placed and billed.
     ```cs
     private async Task ProcessOrder(IMessageHandlerContext context)
     {
@@ -482,10 +487,12 @@ Sagas persist data using a [persister](https://docs.particular.net/persistence/)
 ### Important note about Sagas: ###
 > "Other than interacting with its own internal state, a saga should not access a database, call out to web services, or access other resources - neither directly nor indirectly by having such dependencies injected into it."
 
-# Step Seven #
-The shipping carrier we use can sometimes has issues getting our shipments out on time and our customers need to so we want to update our Saga so that if an order is not shipped within ten seconds some action should be taken like notifying the customer that their order is delayed.  We can do this with a [Saga Timeout](https://docs.particular.net/nservicebus/sagas/timeouts "Saga Timeout") which is essentialy a way to have an event be scheduled for some time in the future.
+# Step Seven - Timeouts
+The shipping carrier you use is not always able to get shipments out on time.  If they don't ship the order within 20 seconds you need to have a secondary carrier fullfil the shipment to keep your customers happy.
+
+You can do this with a [Saga Timeout](https://docs.particular.net/nservicebus/sagas/timeouts "Saga Timeout") which is essentialy a way to have an event be scheduled for some time in the future.
  
-This step adds a timeout to the `ShippingPolicy` Saga called `OrderShippingPickupTimeExceeded`.
+This step adds a timeout to the `ShippingPolicy` saga called `OrderShippingPickupTimeExceeded`.
 
 1. In `ShipOrderHandler` publish a `OrderShipped` event
     ```cs
@@ -506,14 +513,14 @@ This step adds a timeout to the `ShippingPolicy` Saga called `OrderShippingPicku
         }
     }
     ```
-2. Update `ShippingPolicy` Saga to be handle the `OrderShipped` event 
+2. Update `ShippingPolicy` saga to be handle the `OrderShipped` event 
     ```cs
         public class ShippingPolicy : Saga<ShippingPolicyData>, 
                                         IAmStartedByMessages<OrderPlaced>, 
                                         IAmStartedByMessages<OrderBilled>,
                                         IHandleMessages<OrderShipped>
     ```
-3. Implement the Handle method and set an `IsShipped` flag on the Saga data object. 
+3. Implement the Handle method and set an `IsShipped` flag on the aga data object. 
     ```cs
     public Task Handle(OrderShipped message, IMessageHandlerContext context)
     {
@@ -533,7 +540,7 @@ This step adds a timeout to the `ShippingPolicy` Saga called `OrderShippingPicku
         }
     }
     ```
-5. Update the `ConfigureHowToFindSaga` method so the Saga knows how to map to the `OrderShipped` event.  
+5. Update the `ConfigureHowToFindSaga` method so the saga knows how to map to the `OrderShipped` event.  
     ```cs
     protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShippingPolicyData> mapper)
     {
@@ -543,7 +550,7 @@ This step adds a timeout to the `ShippingPolicy` Saga called `OrderShippingPicku
             .ToSaga(sagaData => sagaData.OrderId);
     }
     ```
-6. Update the Saga to handle the timeout
+6. Update the saga to handle the timeout
     ```cs
     public class ShippingPolicy : Saga<ShippingPolicyData>, 
                                   IAmStartedByMessages<OrderPlaced>, 
@@ -571,6 +578,7 @@ This step adds a timeout to the `ShippingPolicy` Saga called `OrderShippingPicku
     public async Task Timeout(OrderShippingPickupTimeExceeded state, IMessageHandlerContext context)
     {
         Log.Info($"******************* Received OrderShipped, OrderId = {Data.OrderId} ******************");
+        // Have secondary carrier to ship the order
         MarkAsComplete();
         await Task.CompletedTask;
     }

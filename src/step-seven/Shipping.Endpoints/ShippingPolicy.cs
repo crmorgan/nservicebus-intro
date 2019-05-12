@@ -37,6 +37,14 @@ namespace Shipping.Endpoints
             Data.IsShipped = true;
             return ProcessOrder(context);
         }
+		
+		public async Task Timeout(OrderShippingPickupTimeExceeded state, IMessageHandlerContext context)
+        {
+            Log.Info($"******************* Received OrderShipped, OrderId = {Data.OrderId} ******************");
+			// Have secondary carrier to ship the order
+            MarkAsComplete();
+            await Task.CompletedTask;
+        }
 
         protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShippingPolicyData> mapper)
         {
@@ -57,13 +65,6 @@ namespace Shipping.Endpoints
                 await context.SendLocal(new ShipOrder { OrderId = Data.OrderId });
                 await RequestTimeout<OrderShippingPickupTimeExceeded>(context, TimeSpan.FromSeconds(20));
             }
-        }
-
-        public async Task Timeout(OrderShippingPickupTimeExceeded state, IMessageHandlerContext context)
-        {
-            Log.Info($"******************* Received OrderShipped, OrderId = {Data.OrderId} ******************");
-            MarkAsComplete();
-            await Task.CompletedTask;
         }
     }
 
