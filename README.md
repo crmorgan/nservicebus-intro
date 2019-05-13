@@ -15,30 +15,35 @@ Each of the steps in this exercise have fully completed source code or you can s
 - Docker for Windows
 
 # Docker Setup
-Setup the Docker host for Linux containers
-1. In your Windows task tray right click on the Docker icon
-2. Click **Switch to Linux containers...**
+### Use Linux Containers
+If you are installing Docker for Windows for this exercise the install will ask you if you want to use Windows container or Linux containers (default).
 
-Enalble Shared Drives
+If you already have Docker for Windows installed you can change the type of containers used by doing the following:
+1. In your Windows Task Tray right click on the Docker icon.
+2. If there is a **Switch to Linux containers...** click that.  If it says **Switch to Linux container...*** you are already using Linux containers and do not have to do anything further.
+
+### Enable Shared Drives
 1. In your Windows task tray right click on the Docker icon
 2. Click **Settings**
 3. Click **Shared Drives**
-4. Select the the drive you cloned this repository into and click **Apply**.
+4. Select the the drive you cloned this repository into.
 
 # RabbitMQ
 This exercise will be using RabbitMQ which you can run in a Docker container using the supplied Docker Compose file.
 
 ## Start the RabbitMQ Container
 
-1. Open a command or powershell shell and change to the root directory of where you cloned this repository to.  There will be a `docker-compose.yaml` file in the directory.
-2. Execute `docker-compose up -d` to start the container in a detached mode.
+1. Open a command shell (command window, powershell, bash, terminus, etc.) and change to the root directory of where you cloned this repository to.  There will be a `docker-compose.yaml` file in the directory.
+2. Execute `docker-compose up -d` to start the container in a detached mode.  This will download and run the containers configured in the **docker-compose.yaml** file.
 
-You can now access the RabbitMQ Management console at http://localhost:15672 and login as  `retaildemo` with the password `password`.
+If the **docker-compose up** command fails with an authorization error when pulling down the containers you may not be logged into Docker Hub.  To login execute the command `docker login` and enter your Docker Hub username and password.
+
+You can now access the RabbitMQ Management console at http://localhost:15672 and login as `retaildemo` with the password `password`.
 
 # Step One #
 This step starts you out with a web site called **store-web** that simulates a shopping cart checkout and will starting the ordering process by sending a `PlaceOrder` command to the **Sales** microservice.
 
-1. Open the **retail-demo** solution located in the `src/exercise` folder.
+1. Open the **retail-demo.sln** solution located in the `src/exercise` folder.
 
 In the solution at this point is an ASP.NET Core web site, a DockerCompose project, an Infrastructure project, and solution folders for the three services you will be creating.  Each service folder contains a messages project.
 
@@ -47,9 +52,10 @@ In the solution at this point is an ASP.NET Core web site, a DockerCompose proje
 Follow the steps below to run the web site and place on order.  This is also where the code in the `exercise` folder starts out and is the directory the rest of this guid will refer to.
 
 1. Set the **docker-compose** project as the startup project for the solution.
-2. Run the project in Visual Studio with <kbd>F5</kbd> and access the web site at http://localhost:32773/.
-3. Click the **proceed to checkout** button to go to the checkout page.  Here you will see an order id that has been generated that will be sent to the `PlaceOrder` command you will implement in step two.
-4. Click **Place your order** to place an order.
+2. Build the solution.  The first build may take a bit since the aspnet core containers are being downloaded.
+3. Run the project in Visual Studio with <kbd>F5</kbd> and access the web site at http://localhost:32773/.
+4. Click the **proceed to checkout** button to go to the checkout page.  Here you will see an order id that has been generated that will be sent to the `PlaceOrder` command you will implement in step two.
+5. Click **Place your order** to place an order.
 
 At this point the `CheckoutController.PlaceOrder()` action method is called which then redirects to a confirmation page but is not sending the `PlaceOrder` command so lets add that now.
 
