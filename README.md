@@ -17,7 +17,7 @@ Each of the steps in this exercise have fully completed source code or you can s
 # Docker Setup
 Setup the Docker host for Linux containers
 1. In your Windows task tray right click on the Docker icon
-2. Click **Switch to Linux containers...***
+2. Click **Switch to Linux containers...**
 
 Enalble Shared Drives
 1. In your Windows task tray right click on the Docker icon
