@@ -35,8 +35,6 @@ This exercise will be using RabbitMQ which you can run in a Docker container usi
 
 You can now access the RabbitMQ Management console at http://localhost:15672 and login as  `retaildemo` with the password `password`.
 
-To stop RabbitMQ execute the `docker-compose down` command.
-
 # Step One #
 This step starts you out with a web site called **store-web** that simulates a shopping cart checkout and will starting the ordering process by sending a `PlaceOrder` command to the **Sales** microservice.
 
