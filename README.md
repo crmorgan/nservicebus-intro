@@ -12,7 +12,18 @@ Each of the steps in this exercise have fully completed source code or you can s
 ### Prerequisites ###
 - Windows 10
 - Visual Studio 2017 or higher (community edition is fine)
-- Docker for Windows with Linux container support enabled
+- Docker for Windows
+
+# Docker Setup
+Setup the Docker host for Linux containers
+1. In your Windows task tray right click on the Docker icon
+2. Click **Switch to Linux containers...***
+
+Enalble Shared Drives
+1. In your Windows task tray right click on the Docker icon
+2. Click **Settings**
+3. Click **Shared Drives**
+4. Select the the drive you cloned this repository into and click **Apply**.
 
 # RabbitMQ
 This exercise will be using RabbitMQ which you can run in a Docker container using the supplied Docker Compose file.
