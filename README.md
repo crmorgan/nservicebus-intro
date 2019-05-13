@@ -19,7 +19,7 @@ This exercise will be using RabbitMQ which you can run in a Docker container usi
 
 ## Start the RabbitMQ Container
 
-1. Open a command or powershell shell and change to the root directory of where you cloned this repository to.
+1. Open a command or powershell shell and change to the root directory of where you cloned this repository to.  There will be a `docker-compose.yaml` file in the directory.
 2. Execute `docker-compose up -d` to start the container in a detached mode.
 
 You can now access the RabbitMQ Management console at http://localhost:15672 and login as  `retaildemo` with the password `password`.
